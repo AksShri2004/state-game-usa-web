@@ -1,0 +1,122 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>US States Quiz</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='styles.css') }}">
+    <style>
+        body {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            margin: 0;
+            font-family: Arial, sans-serif;
+            background-color: #f0f0f0;
+        }
+        .container {
+            text-align: center;
+        }
+        .state-name {
+            position: absolute;
+            font-size: 14px;
+            color: red;
+            transform: translate(-50%, -50%);
+        }
+        #map-container {
+            position: relative;
+            width: 725px;  /* Ensure this matches the image width */
+            height: 491px; /* Ensure this matches the image height */
+            margin: 0 auto; /* Center the image container */
+            overflow: hidden; /* Prevent elements from overflowing */
+        }
+        #map {
+            width: 100%;
+            height: 100%;
+        }
+        #quiz {
+            margin-top: 20px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>US States Quiz</h1>
+        <div id="map-container">
+            <img id="map" src="{{ url_for('static', filename='blank_states_img.gif') }}" alt="US Map">
+        </div>
+        <div id="quiz">
+            <input type="text" id="state-input" placeholder="Type a state">
+            <button onclick="submitGuess()">Submit</button>
+        </div>
+        <div id="result"></div>
+    </div>
+    <script>
+        function submitGuess() {
+            const stateInput = document.getElementById('state-input').value;
+            fetch('/guess', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({ state: stateInput })
+            })
+            .then(response => response.json())
+            .then(data => {
+                // Remove previous prompt
+                const resultDiv = document.getElementById('result');
+                resultDiv.innerHTML = '';
+
+                if (data.correct) {
+                    const mapContainer = document.getElementById('map-container');
+                    const map = document.getElementById('map');
+                    const originalWidth = 725;  // Width of the image
+                    const originalHeight = 491; // Height of the image
+                    const containerWidth = mapContainer.clientWidth;
+                    const containerHeight = mapContainer.clientHeight;
+
+                    // Calculate scaling factors
+                    const xScale = containerWidth / originalWidth;
+                    const yScale = containerHeight / originalHeight;
+
+                    // Adjust coordinates for scaling and flipping vertically
+                    const flippedY = originalHeight - data.y - 240; // Flip vertically to align with bottom-left origin
+                    const adjustedX = (data.x + 370) * xScale;
+                    const adjustedY = flippedY * yScale;
+
+                    // Ensure coordinates are within bounds
+                    const constrainedX = Math.max(0, Math.min(containerWidth, adjustedX));
+                    const constrainedY = Math.max(0, Math.min(containerHeight, adjustedY));
+
+                    console.log(`Placing ${data.state} at (${constrainedX}, ${constrainedY})`);  // Debugging line
+
+                    const stateName = document.createElement('div');
+                    stateName.classList.add('state-name');
+                    stateName.style.left = `${constrainedX}px`;
+                    stateName.style.top = `${constrainedY}px`;
+                    stateName.innerHTML = data.state;
+                    mapContainer.appendChild(stateName);
+
+                    const newDiv = document.createElement('div');
+                    newDiv.innerHTML = `${data.state} is correct! Your score: ${data.score}`;
+                    resultDiv.appendChild(newDiv);
+                } else if (data.missed) {
+                    const missedStates = data.missed.join(', ');
+                    resultDiv.innerHTML = `You missed: ${missedStates}`;
+                } else {
+                    alert('Incorrect guess or state already guessed!');
+                }
+            });
+        }
+
+        // Add event listener to handle "Enter" key press
+        document.getElementById('state-input').addEventListener('keypress', function(event) {
+            if (event.key === 'Enter') {
+                event.preventDefault(); // Prevent default form submission behavior
+                submitGuess(); // Call the submitGuess function
+            }
+        });
+    </script>
+</body>
+</html>

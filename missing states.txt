@@ -1,0 +1,1 @@
+new record: ['Alabama', 'California', 'Texas', 'New Jersey', 'Hawaii', 'New Mexico', 'North Dakota', 'South Dakota', 'North Carolina', 'South Carolina', 'Alaska', 'New York', 'Washington', 'Ohio', 'Tennessee', 'Arizona', 'Colorado', 'Delaware']
